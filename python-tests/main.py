@@ -1,3 +1,5 @@
+from perlin import PerlinNoise
+
 """
 Disclaimer: This solution is not scalable for creating a big world.
 Creating a game like Minecraft requires specialized knowledge and is not as easy
@@ -11,6 +13,9 @@ around the player so you can interact with the world.
 """
 
 # https://www.ursinaengine.org/minecraft_clone.html
+
+import os
+os.environ["PANDA3D_GL_VERSION"] = "2 1"
 
 from ursina import *
 from ursina.prefabs.first_person_controller import FirstPersonController
@@ -34,11 +39,22 @@ class Voxel(Button):
             highlight_color=color.lime,
         )
 
+h = 20
+w = 20
 
-for z in range(8):
-    for x in range(8):
-        voxel = Voxel(position=(x, 0, z))
+echelle = 0.03 
 
+generateur = PerlinNoise()
+map_hauteurs = []
+
+for z in range(h):
+    for x in range(w):
+        # On multiplie par l'échelle pour avancer par petits pas dans le bruit
+        value = generateur.noise(x * echelle, z * echelle) - 1
+
+        # On convertit cette valeur (0 à 1) en hauteur de blocs (ex: max 20 blocs)
+        # voxel = Voxel(position=(x, value * 255, z))
+        voxel = Voxel(position=(x, value * 40, z))
 
 def input(key):
     if key == "left mouse down":
