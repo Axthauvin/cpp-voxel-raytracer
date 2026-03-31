@@ -363,16 +363,19 @@ namespace isim
               std::clamp(static_cast<float>(
                            -ray.direction.dotProduct(normal_at_collision)),
                          0.0f, 1.0f);
-            const float k =
-              1.0f - eta * eta * (1.0f - cos_theta_i * cos_theta_i);
+            // const float k =
+            //   1.0f - eta * eta * (1.0f - cos_theta_i * cos_theta_i);
 
-            Vector3 refract_dir(-1.0f, -1.0f, -1.0f, true);
-            if (k >= 0.0f)
-              {
-                refract_dir =
-                  (ray.direction * eta
-                   + normal_at_collision * (eta * cos_theta_i - std::sqrt(k)));
-              }
+            // Vector3 refract_dir(-1.0f, -1.0f, -1.0f, true);
+            // if (k >= 0.0f)
+            //   {
+            //     refract_dir =
+            //       (ray.direction * eta
+            //        + normal_at_collision * (eta * cos_theta_i - std::sqrt(k)));
+            //   }
+
+            // in minecraft water is not really refractive, it's more like a transparent material
+            Vector3 refract_dir = ray.direction;
 
             Color refracted_color = pixel_color;
             bool has_refracted_color = false;

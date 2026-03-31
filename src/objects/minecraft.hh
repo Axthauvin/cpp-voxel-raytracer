@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include "color.hh"
 #include "cuboid.hh"
 #include "objects/texture_material.hh"
@@ -155,11 +156,16 @@ namespace isim
                    "textures/water/water.png", water_map, "water");
     }
 
-    static Block*
-    new_water(const Point3& position, float width = 1, float depth = 1)
+    static Block* new_water(const Point3& position,
+                            float width = 1,
+                            float depth = 1,
+                            bool enable_reflection = true)
     {
-      Uniform_texture_material* water_map =
-        new Uniform_texture_material(Color::white, 1.0f, 0.2f, 255.0f, 5.0f);
+      double specular_strength = enable_reflection ? 0.2f : 0.0f;
+      double ior = enable_reflection ? 5.0f : 1.0f;
+
+      Uniform_texture_material* water_map = new Uniform_texture_material(
+        Color::white, 1.0f, specular_strength, 255.0f, ior);
       return new Block(position + Vector3(0, 0.1f, 0), width, 0.7f, depth,
                        "textures/water/water.png", "textures/water/water.png",
                        "textures/water/water.png", water_map, "water");

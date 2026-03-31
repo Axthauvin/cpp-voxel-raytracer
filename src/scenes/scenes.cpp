@@ -271,7 +271,7 @@ namespace isim
   Scene*
   minecraft_terrain_scene(int width, int depth, double scale, int max_height)
   {
-    TerrainGenerator terrain(42);
+    TerrainGenerator terrain(42, true);
 
     static std::vector<const Object*> blocks =
       terrain.generate(width, depth, scale, max_height);

@@ -1,17 +1,21 @@
 #include "terrain_generator.hh"
 
 #include <cmath>
+#include <iostream>
 #include "objects/minecraft.hh"
 #include "objects/object.hh"
 
 namespace isim
 {
-  TerrainGenerator::TerrainGenerator()
+  TerrainGenerator::TerrainGenerator(bool enable_water_reflection)
     : perlin_()
+    , enable_reflection(enable_water_reflection)
   {}
 
-  TerrainGenerator::TerrainGenerator(unsigned int seed)
+  TerrainGenerator::TerrainGenerator(unsigned int seed,
+                                     bool enable_water_reflection)
     : perlin_(seed)
+    , enable_reflection(enable_water_reflection)
   {}
 
   double TerrainGenerator::fbm(double x,
@@ -67,7 +71,7 @@ namespace isim
 
             if (value < 0.40)
               {
-                out.push_back(Block::new_water(pos));
+                out.push_back(Block::new_water(pos, 1, 1, enable_reflection));
               }
             else if (value < 0.45)
               {

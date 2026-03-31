@@ -10,8 +10,8 @@ namespace isim
   class TerrainGenerator
   {
   public:
-    TerrainGenerator();
-    TerrainGenerator(unsigned int seed);
+    TerrainGenerator(bool enable_water__reflection);
+    TerrainGenerator(unsigned int seed, bool enable_water_reflection);
 
     std::vector<const Object*> generate(int width,
                                         int depth,
@@ -25,6 +25,8 @@ namespace isim
 
   private:
     PerlinNoise perlin_;
+    bool
+      enable_reflection; // regular minecraft water doesn't have reflection, but it looks nicer with it in our renderer
 
     double fbm(double x,
                double z,
