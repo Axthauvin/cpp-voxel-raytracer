@@ -9,7 +9,8 @@ int main()
 {
   std::cout << "Rendering scene..." << std::endl;
 
-  isim::Scene* scene = isim::minecraft_terrain_scene(50, 50, 0.03);
+  // isim::Scene* scene = isim::minecraft_terrain_scene(50, 50, 0.03);
+  isim::Scene* scene = isim::water_test();
 
   std::cout << "Scene rendered, saving image..." << std::endl;
 
@@ -18,7 +19,7 @@ int main()
 
   for (size_t i = 0; i < image.size(); i++)
     {
-      std::string filename = "minecraft.png";
+      std::string filename = "water-test.png";
       image[i].save(filename.c_str());
       std::cout << "Scene rendered and saved to " << filename << std::endl;
     }

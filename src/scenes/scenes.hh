@@ -17,4 +17,5 @@ namespace isim
                                  int depth,
                                  double scale,
                                  int max_height = 12);
+  Scene* water_test();
 } // namespace isim
