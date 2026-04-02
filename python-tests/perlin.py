@@ -1,7 +1,38 @@
 import random
 import numpy as np
+import math
+import colorsys
+import matplotlib.pyplot as plt
 from PIL import Image
 
+def cart_distance(x1, y1, x2, y2):
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+class BiomeType:
+    def __init__(self, s, hue):
+        self.s = s
+        self.hue = hue
+
+class Seed:
+    types = [
+        BiomeType("SEA", 237),
+        BiomeType("DESERT", 52),
+        BiomeType("PLAINE", 130),
+        BiomeType("MONTAGNE", 207),
+    ]
+
+    def __init__(self, random_seed=None, biome_type=None):
+        if random_seed is not None:
+            random.seed(random_seed)
+        
+        self.x = random.random()
+        self.y = random.random()
+
+        if biome_type is not None:
+            self.biome_type = biome_type
+        else:
+            self.biome_type = self.types[random.randint(1, len(self.types) - 1)]
+        
 class PerlinNoise:
     def __init__(self, seed=None):
         if seed is not None:
@@ -60,31 +91,72 @@ class PerlinNoise:
         # Le résultat brut est entre -1 et 1. On le ramène entre 0 et 1 pour plus de simplicité.
         return (res + 1) / 2
 
-if __name__ == "__main__":
+# Octaves
 
-    # Exemple d'utilisation
-    largeur_map = 200
-    longueur_map = 100
-    echelle = 0.1 # Plus l'échelle est petite, plus le terrain est "zoomé" et doux
+nb_octaves = 3
+persistance = 2
+lacunarity = 0.5
 
-    generateur = PerlinNoise()
-    map_hauteurs = []
+# Exemple d'utilisation
 
-    for y in range(longueur_map):
-        ligne = []
-        for x in range(largeur_map):
-            # On multiplie par l'échelle pour avancer par petits pas dans le bruit
-            valeur_bruit = generateur.noise(x * echelle, y * echelle)
+largeur_map = 500
+longueur_map = 500
+echelle = 0.01 # Plus l'échelle est petite, plus le terrain est "zoomé" et doux
+seeds = []
 
-            # On convertit cette valeur (0 à 1) en hauteur de blocs (ex: max 20 blocs)
-            hauteur_blocs = int(valeur_bruit * 255)
-            ligne.append(hauteur_blocs)
-        map_hauteurs.append(ligne)
+for i in range(6):
+    seeds.append(Seed(i))
 
-    # Affichage du résultat dans la console
+generateur = PerlinNoise()
+map_hauteurs = []
 
-    im = Image.fromarray(np.array(map_hauteurs, dtype=np.uint8))
-    im.show()
+sea = Seed.types[0]
 
-    # for ligne in map_hauteurs:
-    #     print([f"{h:2d}" for h in ligne])
+for y in range(longueur_map):
+    ligne = []
+    for x in range(largeur_map):
+        min_d = float("inf")
+        biome_type = None
+        valeur_bruit = 0
+
+        frequence = echelle
+        ampl = 1
+        max_possible = 0
+        
+        for i in range(nb_octaves):
+            valeur_bruit += generateur.noise(x * frequence, y * frequence) * ampl
+            max_possible += ampl
+            
+            ampl *= persistance
+            frequence *= lacunarity
+
+        valeur_bruit /= max_possible
+
+        if valeur_bruit < 0.3:
+            biome_type = sea
+        else:
+            for seed in seeds:
+                noise_x = generateur.noise(x * 0.02, y * 0.02) * 20
+                noise_y = generateur.noise(x * 0.02, y * 0.02) * 20
+                d = cart_distance(x + noise_x, y + noise_y, seed.x * longueur_map, seed.y * largeur_map)
+                if d < min_d:
+                    min_d = d
+                    biome_type = seed.biome_type
+            
+        # On multiplie par l'échelle pour avancer par petits pas dans le bruit
+
+        # On convertit cette valeur (0 à 1) en hauteur de blocs (ex: max 20 blocs)
+        rgb_unit = colorsys.hsv_to_rgb(biome_type.hue / 360, 0.8, valeur_bruit)
+        rgb = tuple(int(c * 255) for c in rgb_unit)
+        ligne.append(rgb)
+    map_hauteurs.append(ligne)
+
+# Affichage du résultat dans la console
+
+im_np = np.array(map_hauteurs, dtype=np.uint8)
+print(im_np)
+im = Image.fromarray(np.array(map_hauteurs, dtype=np.uint8))
+im.show()
+
+# for ligne in map_hauteurs:
+#     print([f"{h:2d}" for h in ligne])
