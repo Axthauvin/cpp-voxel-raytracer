@@ -26,7 +26,12 @@
 namespace isim
 {
 
-  Scene* grass_block_scene()
+  SceneOutput create_output(const std::string& name, Scene* scene)
+  {
+    return SceneOutput{name, scene};
+  }
+
+  SceneOutput grass_block_scene()
   {
     static isim::Camera camera(isim::Point3(0, 1.5, 0), isim::Point3(0, 0.5, 5),
                                isim::Vector3(0, 1, 0), 60, 45, 1);
@@ -97,12 +102,12 @@ namespace isim
     static Scene scene(objects, lights, {&camera}, Color::sky_blue,
                        Color::black);
 
-    return &scene;
+    return create_output("grass_block_scene", &scene);
   }
 
-  Scene* test_block_texure(const char* top_texture_filename,
-                           const char* bottom_texture_filename,
-                           const char* side_texture_filename)
+  SceneOutput test_block_texure(const char* top_texture_filename,
+                                const char* bottom_texture_filename,
+                                const char* side_texture_filename)
   {
     static isim::Camera camera(isim::Point3(0, -1, -2), isim::Point3(0, 0, 0),
                                isim::Vector3(0, 1, 0), 60, 45, 1);
@@ -125,10 +130,10 @@ namespace isim
     static Scene scene(objects, lights, {&camera}, Color::sky_blue,
                        Color::black);
 
-    return &scene;
+    return create_output("test_block_texture", &scene);
   }
 
-  Scene* minecraft_tree()
+  SceneOutput minecraft_tree()
   {
     static isim::Camera camera(isim::Point3(0, 5, -10), isim::Point3(0, 3, 0),
                                isim::Vector3(0, 1, 0), 60, 45, 1);
@@ -164,10 +169,10 @@ namespace isim
     static Scene scene(objects, lights, {&camera}, Color::sky_blue,
                        Color::black);
 
-    return &scene;
+    return create_output("minecraft_tree", &scene);
   }
 
-  Scene* water_lake_scene()
+  SceneOutput water_lake_scene()
   {
     static isim::Camera camera(isim::Point3(7, 12, -14), isim::Point3(0, 0, 2),
                                isim::Vector3(0, 1, 0), 60, 45, 1);
@@ -236,7 +241,7 @@ namespace isim
 
       // place a tree next to the lake for more visual interest
       std::vector<isim::Block*> tree_blocks =
-        Tree::place_tree(isim::Point3(-3, 1, 3), 5);
+        Tree::place_tree(isim::Point3(-3, 1, 3));
       for (const auto block : tree_blocks)
         {
           scene_objects.push_back(block);
@@ -260,24 +265,31 @@ namespace isim
     static isim::PointLight main_light(isim::Point3(-5, 10, -5),
                                        isim::Color{255, 255, 255});
 
+    // static isim::DirectionalLight main_light(isim::Vector3(1, -2, 1),
+    //                                          isim::Color{255, 255, 255});
+
     static const std::vector<const isim::Light*> lights = {&main_light};
 
     static Scene scene(objects, lights, {&camera}, Color::sky_blue,
                        Color::black);
 
-    return &scene;
+    return create_output("water_lake_scene", &scene);
   }
 
-  Scene*
-  minecraft_terrain_scene(int width, int depth, double scale, int max_height)
+  SceneOutput minecraft_terrain_scene(int width,
+                                      int depth,
+                                      double scale,
+                                      int max_height,
+                                      size_t camera_count)
   {
-    TerrainGenerator terrain(42, true);
+    TerrainGenerator terrain(67, true);
 
     static std::vector<const Object*> blocks =
       terrain.generate(width, depth, scale, max_height);
 
-    // iterate on all blocks to find the lowest y value
+    // iterate on all blocks to find the max and min y, to know where to place the camera and the ground plane
     double min_y = std::numeric_limits<double>::max();
+    double max_y = std::numeric_limits<double>::min();
     for (const Object* block : blocks)
       {
         const Point3 pos = static_cast<const Block*>(block)->position();
@@ -285,32 +297,75 @@ namespace isim
           {
             min_y = pos.y;
           }
-      }
-
-    // add a layer of grass blocks at the bottom of the terrain
-    for (int x = 0; x < width; x++)
-      {
-        for (int z = 0; z < depth; z++)
+        if (pos.y > max_y)
           {
-            blocks.push_back(Block::new_grass(Point3(x, min_y, z)));
+            max_y = pos.y;
           }
       }
 
-    static isim::Camera camera(Point3(width, 10, depth), Point3(0, 0, 0),
-                               isim::Vector3(0, 1, 0), 60, 45, 1.0f);
+    // // add a layer of grass blocks at the bottom of the terrain
+    // for (int x = 0; x < width; x++)
+    //   {
+    //     for (int z = 0; z < depth; z++)
+    //       {
+    //         blocks.push_back(Block::new_grass(Point3(x, min_y, z)));
+    //       }
+    //   }
 
-    static isim::PointLight main_light(isim::Point3(-5, 10, -5),
-                                       isim::Color{255, 255, 255});
+    if (camera_count == 0)
+      {
+        camera_count = 1;
+      }
+
+    static std::vector<isim::Camera*> owned_cameras;
+    for (auto* cam : owned_cameras)
+      {
+        delete cam;
+      }
+    owned_cameras.clear();
+    owned_cameras.reserve(camera_count);
+
+    const double center_x = static_cast<double>(width) * 0.5;
+    const double center_z = static_cast<double>(depth) * 0.5;
+    const double center_y = (min_y + max_y) * 0.5;
+    const double orbit_radius =
+      std::max(static_cast<double>(width), static_cast<double>(depth)) * 0.85;
+    const double orbit_height = max_y + std::max(12.0, (max_y - min_y) * 0.75);
+
+    for (size_t i = 0; i < camera_count; ++i)
+      {
+        const double angle = 2.0 * M_PI * static_cast<double>(i)
+          / static_cast<double>(camera_count);
+        const Point3 camera_center(center_x + std::cos(angle) * orbit_radius,
+                                   orbit_height,
+                                   center_z + std::sin(angle) * orbit_radius);
+        const Point3 look_at(center_x, center_y, center_z);
+
+        owned_cameras.push_back(new isim::Camera(
+          camera_center, look_at, isim::Vector3(0, 1, 0), 60, 45, 1.0f));
+      }
+
+    static std::vector<const Camera*> cameras;
+    cameras.clear();
+    cameras.reserve(owned_cameras.size());
+    for (const auto* cam : owned_cameras)
+      {
+        cameras.push_back(cam);
+      }
+
+    static isim::DirectionalLight main_light(isim::Vector3(1, -2, 1),
+                                             isim::Color{255, 255, 255});
 
     static const std::vector<const isim::Light*> lights = {&main_light};
 
-    static Scene scene(blocks, lights, {&camera}, Color::sky_blue,
-                       Color::black);
+    static Scene scene(blocks, lights, cameras, Color::sky_blue, Color::black);
 
-    return &scene;
+    scene.cameras = cameras;
+
+    return create_output("minecraft_terrain", &scene);
   }
 
-  Scene* water_test()
+  SceneOutput water_test()
   {
     // just a wall of grass, with water blocks in front of it, to test water rendering and transparency
     static isim::Camera camera(Point3(0, 1.5, 5), Point3(0, 0.5, 0),
@@ -340,7 +395,7 @@ namespace isim
     static Scene scene(objects, lights, {&camera}, Color::sky_blue,
                        Color::black);
 
-    return &scene;
+    return create_output("water_test", &scene);
   }
 
 } // namespace isim

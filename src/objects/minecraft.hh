@@ -9,6 +9,16 @@
 
 namespace isim
 {
+  inline Texture_material* shared_water_material(bool enable_reflection)
+  {
+    static Uniform_texture_material reflective(Color::white, 1.0f, 0.2f, 255.0f,
+                                               5.0f);
+    static Uniform_texture_material non_reflective(Color::white, 1.0f, 0.0f,
+                                                   255.0f, 1.0f);
+    return enable_reflection ? static_cast<Texture_material*>(&reflective)
+                             : static_cast<Texture_material*>(&non_reflective);
+  }
+
   class Block : public Cuboid
   {
   public:
@@ -145,15 +155,13 @@ namespace isim
 
     static Block water(const Point3& position)
     {
-      Uniform_texture_material* water_map =
-        new Uniform_texture_material(Color::white, 1.0f, 0.2f, 255.0f, 1.3f);
-
       // as water is not opaque, ill reduce the actual height of it so
       // that calculation will work !
 
       return Block(position + Vector3(0, 0.2f, 0), 1, 0.8f, 1,
                    "textures/water/water.png", "textures/water/water.png",
-                   "textures/water/water.png", water_map, "water");
+                   "textures/water/water.png", shared_water_material(true),
+                   "water");
     }
 
     static Block* new_water(const Point3& position,
@@ -161,26 +169,23 @@ namespace isim
                             float depth = 1,
                             bool enable_reflection = true)
     {
-      double specular_strength = enable_reflection ? 0.2f : 0.0f;
-      double ior = enable_reflection ? 5.0f : 1.0f;
-
-      Uniform_texture_material* water_map = new Uniform_texture_material(
-        Color::white, 1.0f, specular_strength, 255.0f, ior);
       return new Block(position + Vector3(0, 0.1f, 0), width, 0.7f, depth,
                        "textures/water/water.png", "textures/water/water.png",
-                       "textures/water/water.png", water_map, "water");
+                       "textures/water/water.png",
+                       shared_water_material(enable_reflection), "water");
     }
 
     static Block dirt(const Point3& position)
     {
-      return Block(position, "textures/dirt/dirt.png", "textures/dirt/dirt.png",
-                   "textures/dirt/dirt.png", "dirt");
+      return Block(position, "textures/grass/dirt.png",
+                   "textures/grass/dirt.png", "textures/grass/dirt.png",
+                   "dirt");
     }
 
     static Block* new_dirt(const Point3& position)
     {
-      return new Block(position, "textures/dirt/dirt.png",
-                       "textures/dirt/dirt.png", "textures/dirt/dirt.png",
+      return new Block(position, "textures/grass/dirt.png",
+                       "textures/grass/dirt.png", "textures/grass/dirt.png",
                        "dirt");
     }
 
@@ -195,6 +200,33 @@ namespace isim
       return new Block(position, "textures/sand/sand.png",
                        "textures/sand/sand.png", "textures/sand/sand.png",
                        "sand");
+    }
+
+    static Block stone(const Point3& position)
+    {
+      return Block(position, "textures/stone/stone.png",
+                   "textures/stone/stone.png", "textures/stone/stone.png",
+                   "stone");
+    }
+
+    static Block* new_stone(const Point3& position)
+    {
+      return new Block(position, "textures/stone/stone.png",
+                       "textures/stone/stone.png", "textures/stone/stone.png",
+                       "stone");
+    };
+
+    static Block snow(const Point3& position)
+    {
+      return Block(position, "textures/snow/snow.png", "textures/snow/snow.png",
+                   "textures/snow/snow.png", "snow");
+    }
+
+    static Block* new_snow(const Point3& position)
+    {
+      return new Block(position, "textures/snow/snow.png",
+                       "textures/snow/snow.png", "textures/snow/snow.png",
+                       "snow");
     }
   };
 

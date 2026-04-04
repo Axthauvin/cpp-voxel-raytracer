@@ -18,39 +18,43 @@
 #include "objects/object.hh"
 #include "utils/image.hh"
 #include "utils/resolution.hh"
+#include "voxel_grid.hh"
 
 namespace isim
 {
 
-    class Scene
-    {
-    public:
-        Scene() = delete;
-        ~Scene() = default;
+  class Scene
+  {
+  public:
+    Scene() = delete;
+    ~Scene() = default;
 
-        Scene(const std::vector<const Object *> &objects,
-              const std::vector<const Light *> &lights,
-              const std::vector<const Camera *> &cameras,
-              const Color backgroundColor, const Color sceneAmbiant)
-            : objects(objects)
-            , lights(lights)
-            , cameras(cameras)
-            , backgroundColor(backgroundColor)
-            , sceneAmbiant(sceneAmbiant)
-        {}
+    Scene(const std::vector<const Object*>& objects,
+          const std::vector<const Light*>& lights,
+          const std::vector<const Camera*>& cameras,
+          const Color backgroundColor,
+          const Color sceneAmbiant)
+      : objects(objects)
+      , lights(lights)
+      , cameras(cameras)
+      , backgroundColor(backgroundColor)
+      , sceneAmbiant(sceneAmbiant)
+      , voxelGrid(objects)
+    {}
 
-        std::vector<const Object *> objects;
-        std::vector<const Light *> lights;
-        std::vector<const Camera *> cameras;
-        Color backgroundColor;
-        Color sceneAmbiant;
+    std::vector<const Object*> objects;
+    std::vector<const Light*> lights;
+    std::vector<const Camera*> cameras;
+    Color backgroundColor;
+    Color sceneAmbiant;
+    VoxelGrid voxelGrid;
 
-        Image render(size_t cameraIndex, Resolution res,
-                     bool raytracing = true) const;
-        Image render(const Camera camera, Resolution res,
-                     bool raytracing = true) const;
-        std::vector<Image> render_all_cameras(Resolution res,
-                                              bool raytracing = true) const;
-    };
+    Image
+    render(size_t cameraIndex, Resolution res, bool raytracing = true) const;
+    Image
+    render(const Camera camera, Resolution res, bool raytracing = true) const;
+    std::vector<Image> render_all_cameras(Resolution res,
+                                          bool raytracing = true) const;
+  };
 } // namespace isim
 #endif /* SCENE_HH */

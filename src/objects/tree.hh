@@ -5,15 +5,15 @@
 
 namespace isim
 {
-    class Tree
-    {
-    public:
-        Tree() = default;
-        ~Tree() = delete;
+  class Tree
+  {
+  public:
+    Tree() = default;
+    ~Tree() = delete;
 
-        static std::vector<Block *> place_tree(Point3 position,
-                                               float trunk_height);
+    static std::vector<Block*> place_tree(Point3 position,
+                                          float trunk_height = 5);
 
-        Point3 position;
-    };
+    Point3 position;
+  };
 } // namespace isim

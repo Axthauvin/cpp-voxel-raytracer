@@ -10,7 +10,8 @@ DEP_FILES := $(OBJ_FILES:.o=.d) $(TEST_OBJ:.o=.d)
 
 CPPFLAGS += -Isrc -Ilib -Ilib/utils
 CXXFLAGS += -Wall -Wextra -O3 -g -std=c++20 -march=native
-LDFLAGS +=
+LDFLAGS += -fopenmp
+CXXFLAGS += -fopenmp
 LDLIBS += -lm
 
 all: test

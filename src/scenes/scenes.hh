@@ -2,20 +2,25 @@
 
 namespace isim
 {
-  Scene* sphere_scene();
-  Scene* the_earth_scene();
-  Scene* the_moon_scene();
-  Scene* grass_block_scene();
-  Scene* test_block_texure(const char* top_texture_filename,
-                           const char* bottom_texture_filename,
-                           const char* side_texture_filename);
-  Scene* minecraft_tree();
-  Scene* water_lake_scene();
-  Scene* triangle();
-  Scene* teacher_shape();
-  Scene* minecraft_terrain_scene(int width,
-                                 int depth,
-                                 double scale,
-                                 int max_height = 12);
-  Scene* water_test();
+
+  struct SceneOutput
+  {
+    std::string scene_name;
+    Scene* result;
+  };
+
+  SceneOutput grass_block_scene();
+  SceneOutput test_block_texure(const char* top_texture_filename,
+                                const char* bottom_texture_filename,
+                                const char* side_texture_filename);
+  SceneOutput minecraft_tree();
+  SceneOutput water_lake_scene();
+  SceneOutput triangle();
+  SceneOutput teacher_shape();
+  SceneOutput minecraft_terrain_scene(int width,
+                                      int depth,
+                                      double scale,
+                                      int max_height = 12,
+                                      size_t camera_count = 1);
+  SceneOutput water_test();
 } // namespace isim

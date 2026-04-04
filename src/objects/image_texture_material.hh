@@ -1,29 +1,35 @@
 #pragma once
+
+#include <memory>
+#include <string>
+
 #include "objects/texture_material.hh"
 #include "utils/image.hh"
 #include "utils/image_io.hh"
 
 namespace isim
 {
-    class Image_texture_material : public isim::Texture_material
-    {
-    public:
-        Image_texture_material(const char *filename, const double kd = 1.0,
-                               const double specularity = 0,
-                               const double shininess = 250.0f)
-        {
-            this->properties.ambient_color = isim::Color::red;
-            this->properties.kd = kd;
-            this->properties.ks = specularity;
-            this->properties.ns = shininess;
-            this->properties.ior = 1.0f;
+  class Image_texture_material : public isim::Texture_material
+  {
+  public:
+    Image_texture_material(const char* filename,
+                           const double kd = 1.0,
+                           const double specularity = 0,
+                           const double shininess = 250.0f,
+                           const double ior = 1.0f);
 
-            texture = load_image(filename);
-        }
+    static const Image_texture_material*
+    get_cached(const char* filename,
+               const double kd = 1.0,
+               const double specularity = 0,
+               const double shininess = 250.0f,
+               const double ior = 1.0f);
 
-        Image *texture;
+    Texture_properties getElementsAt(float u, float v) const override;
 
-        Texture_properties getElementsAt(float u, float v) const override;
-    };
+  private:
+    std::shared_ptr<const Image> texture_;
+    std::string cache_key_;
+  };
 
 } // namespace isim

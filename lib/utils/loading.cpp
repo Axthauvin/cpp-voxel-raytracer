@@ -1,6 +1,7 @@
 #include "loading.hh"
 
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <iomanip>
 #include <iostream>
@@ -8,10 +9,24 @@
 
 namespace isim
 {
-  void Loading::show() { update(0.0); }
+  void Loading::show()
+  {
+    // Initialise le chrono au moment où on affiche la barre pour la première fois
+    last_update = std::chrono::steady_clock::now();
+    update(0.0);
+  }
 
   void Loading::update(double new_progress)
   {
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(now - last_update);
+
+    if (elapsed.count() < refresh_rate_ms && new_progress < 1.0
+        && new_progress > 0.0)
+      return;
+
+    last_update = now;
     progress = std::max(0.0, std::min(1.0, new_progress));
 
     size_t bar_width = termial_width > 12 ? termial_width - 12 : 10;
