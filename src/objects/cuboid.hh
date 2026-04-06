@@ -57,8 +57,8 @@ namespace isim
                color)
     {}
 
-    Point3 max_point;
     Point3 min_point;
+    Point3 max_point;
     std::vector<const Image_texture_material*> face_materials;
 
     float intersect(const Ray& ray) const override;
