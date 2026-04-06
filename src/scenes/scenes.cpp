@@ -20,6 +20,7 @@
 #include "objects/triangle.hh"
 #include "point.hh"
 #include "scene.hh"
+#include "schematica/parser.hh"
 #include "terrain/terrain_generator.hh"
 #include "vector.hh"
 
@@ -398,4 +399,82 @@ namespace isim
     return create_output("water_test", &scene);
   }
 
+  SceneOutput load_schematic(const std::string& filename,
+                             bool replace_unknown_with_dirt,
+                             float rotation_angle,
+                             Point3 camera_position,
+                             Point3 camera_look_at)
+  {
+    SchematicaParser parser(filename);
+    SchematicaParser::Schematic schematic =
+      parser.parse(replace_unknown_with_dirt);
+
+    static std::vector<Block*> owned_blocks;
+    for (auto* block : owned_blocks)
+      {
+        delete block;
+      }
+    owned_blocks.clear();
+    owned_blocks.reserve(schematic.blocks.size());
+
+    static std::vector<const Object*> objects;
+    objects.clear();
+    objects.reserve(schematic.blocks.size());
+
+    for (const auto& block : schematic.blocks)
+      {
+        owned_blocks.push_back(new Block(block));
+        objects.push_back(owned_blocks.back());
+      }
+
+    std::cout << "Total blocks loaded: " << objects.size() << std::endl;
+
+    if (objects.empty())
+      {
+        std::cerr << "Warning: No blocks loaded from the schematic."
+                  << std::endl;
+      }
+
+    const double center_x = static_cast<double>(schematic.width) * 0.5;
+    const double center_y = static_cast<double>(schematic.height) * 0.5;
+    const double center_z = static_cast<double>(schematic.length) * 0.5;
+    const double max_horizontal_dim =
+      std::max(static_cast<double>(schematic.width),
+               static_cast<double>(schematic.length));
+    const double orbit_radius = std::max(6.0, max_horizontal_dim * 1.15);
+    const double camera_height =
+      center_y + std::max(4.0, schematic.height * 0.8);
+
+    const double radians = static_cast<double>(rotation_angle) * M_PI / 180.0;
+    Point3 cam_pos(center_x + std::cos(radians) * orbit_radius, camera_height,
+                   center_z + std::sin(radians) * orbit_radius);
+    Point3 look_at(center_x, center_y, center_z);
+
+    if (camera_position != Point3(0, 0, 0) || camera_look_at != Point3(0, 0, 0))
+      {
+        cam_pos = camera_position;
+        look_at = camera_look_at;
+      }
+
+    static Camera* camera = nullptr;
+    delete camera;
+    camera =
+      new isim::Camera(cam_pos, look_at, isim::Vector3(0, 1, 0), 60, 45, 1);
+
+    static isim::DirectionalLight main_light(isim::Vector3(-1, -2, 1),
+                                             isim::Color{255, 255, 255});
+
+    static const std::vector<const isim::Light*> lights = {&main_light};
+
+    static Scene* scene = nullptr;
+    delete scene;
+    scene = new Scene(objects, lights, {camera}, Color::sky_blue, Color::black);
+
+    std::string real_filename =
+      filename.substr(filename.find_last_of("/\\") + 1);
+
+    const std::string name = "schematic_" + real_filename;
+
+    return create_output(name, scene);
+  }
 } // namespace isim

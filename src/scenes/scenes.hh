@@ -1,3 +1,4 @@
+#include "point.hh"
 #include "scene.hh"
 
 namespace isim
@@ -23,4 +24,9 @@ namespace isim
                                       int max_height = 12,
                                       size_t camera_count = 1);
   SceneOutput water_test();
+  SceneOutput load_schematic(const std::string& filename,
+                             bool replace_unknown_with_dirt = false,
+                             float rotation_angle = 0,
+                             Point3 camera_position = Point3(0, 0, 0),
+                             Point3 camera_look_at = Point3(0, 0, 0));
 } // namespace isim

@@ -4,19 +4,29 @@
 #include <iostream>
 #include <vector>
 
+#include "point.hh"
 #include "scenes/scenes.hh"
 #include "utils/image.hh"
+
+#include "schematica/parser.hh"
 
 int main()
 {
   std::cout << "Rendering scene..." << std::endl;
   size_t terrain_size = 500;
   double scale = 4.0 / terrain_size;
-  size_t camera_count = 24;
+  size_t camera_count = 1;
 
-  isim::SceneOutput output = isim::minecraft_terrain_scene(
-    terrain_size, terrain_size, scale, 50, camera_count);
+  // isim::SceneOutput output = isim::minecraft_terrain_scene(
+  //   terrain_size, terrain_size, scale, 50, camera_count);
   // isim::SceneOutput output = isim::minecraft_tree();
+
+  // isim::SceneOutput output =
+  //   isim::load_schematic("schematics/temple_of_notch.schem", true, 0,
+  //                        isim::Point3(71, 67, 77), isim::Point3(72, 78, 106));
+
+  isim::SceneOutput output =
+    isim::load_schematic("schematics/dragongamer.schem", true, 0);
   isim::Scene* scene = output.result;
   std::string output_name = output.scene_name;
 

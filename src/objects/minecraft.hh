@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <iostream>
 #include "color.hh"
 #include "cuboid.hh"
@@ -227,6 +228,55 @@ namespace isim
       return new Block(position, "textures/snow/snow.png",
                        "textures/snow/snow.png", "textures/snow/snow.png",
                        "snow");
+    }
+
+    static std::string normalizeBlockName(const std::string& name)
+    {
+      std::string normalized = name;
+      for (char& c : normalized)
+        {
+          if (c == ' ')
+            c = '_';
+          else
+            c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+        }
+      const std::string prefix = "minecraft:";
+      if (normalized.rfind(prefix, 0) == 0)
+        {
+          normalized.erase(0, prefix.size());
+        }
+      return normalized;
+    }
+
+    static std::string getTexturePathForBlockType(const std::string& block_type)
+    {
+      const std::string normalized = normalizeBlockName(block_type);
+      return "./textures/" + normalized + "/" + normalized + ".png";
+    }
+
+    static Block block_from_name(const std::string& palette_name,
+                                 const Point3& position)
+    {
+      const std::string normalized = normalizeBlockName(palette_name);
+      const std::string path = getTexturePathForBlockType(normalized);
+
+      // check path exists
+      if (!std::filesystem::exists(path))
+        {
+          std::cerr << "Texture file not found for block type '" << palette_name
+                    << "': " << path << std::endl;
+          exit(1);
+        }
+
+      return Block(position, path.c_str(), path.c_str(), path.c_str(),
+                   palette_name);
+    }
+
+    static bool texture_exists(const std::string& block_type)
+    {
+      const std::string normalized = normalizeBlockName(block_type);
+      const std::string path = getTexturePathForBlockType(normalized);
+      return std::filesystem::exists(path);
     }
   };
 
