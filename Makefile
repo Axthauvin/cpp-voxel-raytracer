@@ -1,4 +1,5 @@
 CXX := g++
+UNAME_S := $(shell uname -s)
 
 SRC_DIRS := src lib
 BUILD_DIR := build
@@ -12,14 +13,18 @@ CPPFLAGS += -Isrc -Ilib -Ilib/utils -Ilib/imgui -Ilib/backends
 CXXFLAGS += -Wall -Wextra -O3 -g -std=c++20 -march=native
 LDFLAGS += -fopenmp
 CXXFLAGS += -fopenmp
-LDLIBS += -lm -lz -lglfw \
-          -framework OpenGL \
-          -framework Cocoa \
-          -framework IOKit \
-          -framework CoreVideo
+LDLIBS += -lm -lz -lglfw
 
+ifeq ($(UNAME_S),Darwin)
+LDLIBS += -framework OpenGL \
+		  -framework Cocoa \
+		  -framework IOKit \
+		  -framework CoreVideo
 CPPFLAGS += -I/opt/homebrew/opt/glfw/include
 LDFLAGS  += -L/opt/homebrew/opt/glfw/lib
+else
+LDLIBS += -lGL -ldl -lpthread
+endif
 
 all: test
 
