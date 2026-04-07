@@ -13,6 +13,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "ImGuiFileDialog.h"
 #include "GLFW/glfw3.h"
 
 int _main()
@@ -102,7 +103,6 @@ int main()
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
   char buf[250] = { 0 };
-  float f;
 
   // Main loop
   while (!glfwWindowShouldClose(window))
@@ -122,25 +122,40 @@ int main()
     
       // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
       {
-          static float f = 0.0f;
-          static int counter = 0;
+          static std::string mapPath = "not loaded";
+          static int seed = 42;
+          static int dimensions[2] = { 50, 50 };
 
-          ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+          ImGui::Begin("Input");
 
-          ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+          ImGui::Text("Welcome to our Minecraft clone !\nYou can choose the size of the map and its seed.\nEnjoy :)");               // Display some text (you can use a format strings too)
           ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-          ImGui::Checkbox("Another Window", &show_another_window);
 
-          ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-          ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+          ImGui::InputInt2("dimensions", dimensions);
+          ImGui::InputInt("seed", &seed);            // Edit 1 float using a slider from 0.0f to 1.0f
 
-          if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-              counter++;
-          ImGui::SameLine();
-          ImGui::Text("counter = %d", counter);
+          
+          ImGui::Text("Loaded map: %s", mapPath.c_str());               // Display some text (you can use a format strings too)
+
+          // open Dialog Simple
+       	  if (ImGui::Button("Open File Dialog")) {
+      		IGFD::FileDialogConfig config;config.path = ".";
+      		ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose map to load (.schem)", ".schem", config);
+  		  }
 
           ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
           ImGui::End();
+
+          
+        if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse, ImVec2(400, 400))) { // => will show a dialog
+          if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+            mapPath = ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+          }
+    
+          // close
+          ImGuiFileDialog::Instance()->Close();
+        }
       }
 
       // Render
