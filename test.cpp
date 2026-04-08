@@ -5,14 +5,19 @@
 #include "scenes/scenes.hh"
 #include "utils/image.hh"
 
+#include "GLFW/glfw3.h"
+#include "ImGuiFileDialog.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "ImGuiFileDialog.h"
-#include "GLFW/glfw3.h"
 
-
-void render(size_t width, size_t depth, size_t seed, std::string output_name, std::string input_path, bool perlin, std::string &log)
+void render(size_t width,
+            size_t depth,
+            size_t seed,
+            std::string output_name,
+            std::string input_path,
+            bool perlin,
+            std::string& log)
 {
   log = "Rendering scene...";
   std::cout << "Rendering scene..." << '\n';
@@ -22,11 +27,11 @@ void render(size_t width, size_t depth, size_t seed, std::string output_name, st
 
   isim::SceneOutput output;
   if (perlin)
-    output = isim::minecraft_terrain_scene(
-      width, depth, scale, seed, 12, camera_count);
+    output = isim::minecraft_terrain_scene(width, depth, scale, seed, 12,
+                                           camera_count);
   else
     output = isim::load_schematic(input_path, true, 0);
-    
+
   // isim::SceneOutput output = isim::minecraft_tree();
 
   // isim::SceneOutput output =
@@ -56,37 +61,40 @@ void render(size_t width, size_t depth, size_t seed, std::string output_name, st
       log = "Scene rendered and saved to " + filename;
       std::cout << "Scene rendered and saved to " << filename;
     }
-    delete scene;
+  delete scene;
 }
 
 int main()
 {
   if (!glfwInit())
     return -1;
-  
+
   const char* glsl_version = "#version 150";
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // 3.2+ only
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on Mac
 
   // Create window with graphics context
-  float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor()); // Valid on GLFW 3.3+ only
-  GLFWwindow* window = glfwCreateWindow((int)(1280 * main_scale), (int)(800 * main_scale), "Minecraft", nullptr, nullptr);
+  float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(
+    glfwGetPrimaryMonitor()); // Valid on GLFW 3.3+ only
+  GLFWwindow* window =
+    glfwCreateWindow((int)(1280 * main_scale), (int)(800 * main_scale),
+                     "Minecraft", nullptr, nullptr);
 
   if (window == nullptr)
-      return 1;
+    return 1;
 
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1); // Enable vsync
 
-  
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
-  ImGuiIO& io = ImGui::GetIO(); (void)io;
+  ImGuiIO& io = ImGui::GetIO();
+  (void)io;
 
   ImGui::StyleColorsDark();
-  
+
   // Setup scaling
   ImGuiStyle& style = ImGui::GetStyle();
   style.ScaleAllSizes(main_scale);
@@ -96,12 +104,11 @@ int main()
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version); // macOS = 150
 
-  
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
   // Main loop
   while (!glfwWindowShouldClose(window))
-  {
+    {
       glfwPollEvents();
 
       // New frame
@@ -110,95 +117,107 @@ int main()
       ImGui::NewFrame();
 
       {
-          static int seed = 42;
-          static int dimensions[2] = { 50, 50 };
-          static std::string mapPath = "not loaded";
-          static bool valid_path = false;
-          static char output_name_buf[250] = { 0 };
-          static std::string log;
+        static int seed = 42;
+        static int dimensions[2] = {50, 50};
+        static std::string mapPath = "not loaded";
+        static bool valid_path = false;
+        static char output_name_buf[250] = {0};
+        static std::string log;
 
-          ImGui::Begin("Input", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::Begin("Input", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-          ImGui::Text("Welcome to our Minecraft clone !\n\
+        ImGui::Text("Welcome to our Minecraft clone !\n\
 \n\
 You can either:\n\
 1. Create a procedural generated map. You can choose the dimensions and the seed.\n\
 2. Load a map by providing a .shem file.\n\
-Enjoy :)\n\n");               // Display some text (you can use a format strings too)
-          ImGui::InputText("Output scene name", output_name_buf, 250);
-          ImGui::Text("\n");
+Enjoy :)\n\n"); // Display some text (you can use a format strings too)
+        ImGui::InputText("Output scene name", output_name_buf, 250);
+        ImGui::Text("\n");
 
-          if (ImGui::CollapsingHeader("1. Procedural generated map"))
+        if (ImGui::CollapsingHeader("1. Procedural generated map"))
           {
-
             ImGui::Text("\n");
             ImGui::InputInt2("dimensions (width x depth)", dimensions);
             ImGui::InputInt("seed", &seed);
 
             if (ImGui::Button("Create Procedural generated map"))
-            {
-              std::string output_name(output_name_buf, std::strlen(output_name_buf));
+              {
+                std::string output_name(output_name_buf,
+                                        std::strlen(output_name_buf));
 
-              if (output_name.empty())
-              {
-                log = "Invalid output name, must not be empty.";                
+                if (output_name.empty())
+                  {
+                    log = "Invalid output name, must not be empty.";
+                  }
+                else
+                  {
+                    render(dimensions[1], dimensions[0], seed, output_name, "",
+                           true, log);
+                  }
               }
-              else
-              {
-                render(dimensions[1], dimensions[0], seed, output_name, "", true, log);
-              }
-            }
             ImGui::Text("\n");
           }
 
-          if (ImGui::CollapsingHeader("2. Loaded map"))
+        if (ImGui::CollapsingHeader("2. Loaded map"))
           {
             ImGui::Text("\n");
-            ImGui::Text("Loaded map path: %s\n", mapPath.c_str());               // Display some text (you can use a format strings too)
-          
+            ImGui::Text(
+              "Loaded map path: %s\n",
+              mapPath
+                .c_str()); // Display some text (you can use a format strings too)
+
             // open Dialog Simple
-         	if (ImGui::Button("Open File Dialog")) {
-        		IGFD::FileDialogConfig config;config.path = ".";
-        		ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose map to load (.schem)", ".schem", config);
-    		  }
+            if (ImGui::Button("Open File Dialog"))
+              {
+                IGFD::FileDialogConfig config;
+                config.path = ".";
+                ImGuiFileDialog::Instance()->OpenDialog(
+                  "ChooseFileDlgKey", "Choose map to load (.schem)", ".schem",
+                  config);
+              }
 
             if (ImGui::Button("Generate loaded map"))
-            {
-              std::string output_name(output_name_buf, std::strlen(output_name_buf));
+              {
+                std::string output_name(output_name_buf,
+                                        std::strlen(output_name_buf));
 
-              if (!valid_path)
-              {
-                log = "Invalid file, cannot generate map.";
+                if (!valid_path)
+                  {
+                    log = "Invalid file, cannot generate map.";
+                  }
+                else if (output_name.empty())
+                  {
+                    log = "Invalid output name, must not be empty.";
+                  }
+                else
+                  {
+                    render(0, 0, 0, output_name, mapPath, false, log);
+                    log = "Generated map !";
+                  }
               }
-              else if (output_name.empty())
-              {
-                log = "Invalid output name, must not be empty.";                
-              }
-              else
-              {
-                render(0, 0, 0, output_name, mapPath, false, log);
-                log = "Generated map !";
-              }
-            }
             ImGui::Text("\n");
           }
 
+        // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::Text("\n%s\n", log.c_str());
+        ImGui::End();
 
-          // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-          ImGui::Text("\n%s\n", log.c_str());
-          ImGui::End();
+        if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey",
+                                                 ImGuiWindowFlags_NoCollapse,
+                                                 ImVec2(400, 400)))
+          { // => will show a dialog
+            if (ImGuiFileDialog::Instance()->IsOk())
+              { // action if OK
+                mapPath = ImGuiFileDialog::Instance()->GetFilePathName();
+                std::string filePath =
+                  ImGuiFileDialog::Instance()->GetCurrentPath();
+              }
 
-          
-        if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse, ImVec2(400, 400))) { // => will show a dialog
-          if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
-            mapPath = ImGuiFileDialog::Instance()->GetFilePathName();
-            std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+            valid_path = true;
+            // close
+            ImGuiFileDialog::Instance()->Close();
           }
-
-  		  valid_path = true;
-          // close
-          ImGuiFileDialog::Instance()->Close();
-        }
       }
 
       // Render
@@ -207,12 +226,13 @@ Enjoy :)\n\n");               // Display some text (you can use a format strings
       int display_w, display_h;
       glfwGetFramebufferSize(window, &display_w, &display_h);
       glViewport(0, 0, display_w, display_h);
-      glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+      glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w,
+                   clear_color.z * clear_color.w, clear_color.w);
       glClear(GL_COLOR_BUFFER_BIT);
       ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
       glfwSwapBuffers(window);
-  }
+    }
 
   // Cleanup
   ImGui_ImplOpenGL3_Shutdown();
