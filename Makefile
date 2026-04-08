@@ -1,4 +1,4 @@
-CXX := g++
+# CXX := g++
 UNAME_S := $(shell uname -s)
 
 SRC_DIRS := src lib
@@ -16,6 +16,7 @@ CXXFLAGS += -fopenmp
 LDLIBS += -lm -lz -lglfw
 
 ifeq ($(UNAME_S),Darwin)
+CXXFLAGS += -DGL_SILENCE_DEPRECATION
 LDLIBS += -framework OpenGL \
 		  -framework Cocoa \
 		  -framework IOKit \

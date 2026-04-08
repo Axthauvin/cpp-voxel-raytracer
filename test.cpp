@@ -1,14 +1,9 @@
-#include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <iostream>
 #include <vector>
 
-#include "point.hh"
 #include "scenes/scenes.hh"
 #include "utils/image.hh"
-
-#include "schematica/parser.hh"
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -16,28 +11,32 @@
 #include "ImGuiFileDialog.h"
 #include "GLFW/glfw3.h"
 
-int _main()
-{
 
-  std::cout << "Rendering scene..." << std::endl;
-  size_t terrain_size = 500;
+void render(size_t width, size_t depth, size_t seed, std::string output_name, std::string input_path, bool perlin, std::string &log)
+{
+  log = "Rendering scene...";
+  std::cout << "Rendering scene..." << '\n';
+  size_t terrain_size = width * depth;
   double scale = 4.0 / terrain_size;
   size_t camera_count = 1;
 
-  // isim::SceneOutput output = isim::minecraft_terrain_scene(
-  //   terrain_size, terrain_size, scale, 50, camera_count);
+  isim::SceneOutput output;
+  if (perlin)
+    output = isim::minecraft_terrain_scene(
+      width, depth, scale, seed, 12, camera_count);
+  else
+    output = isim::load_schematic(input_path, true, 0);
+    
   // isim::SceneOutput output = isim::minecraft_tree();
 
   // isim::SceneOutput output =
   //   isim::load_schematic("schematics/temple_of_notch.schem", true, 0,
   //                        isim::Point3(71, 67, 77), isim::Point3(72, 78, 106));
 
-  isim::SceneOutput output =
-    isim::load_schematic("schematics/dragongamer.schem", true, 0);
   isim::Scene* scene = output.result;
-  std::string output_name = output.scene_name;
 
-  std::cout << "Scene " << output_name << " created, rendering..." << std::endl;
+  log = "Scene " + output_name + " created, rendering...";
+  std::cout << "Scene " << output_name << " created, rendering...";
 
   std::vector<isim::Image> image =
     scene->render_all_cameras(isim::Resolution::SmallHD(), true);
@@ -54,10 +53,10 @@ int _main()
           filename = output_name + "_camera_" + std::to_string(i) + ".png";
         }
       image[i].save(filename.c_str());
-      std::cout << "Scene rendered and saved to " << filename << std::endl;
+      log = "Scene rendered and saved to " + filename;
+      std::cout << "Scene rendered and saved to " << filename;
     }
-
-  return 0;
+    delete scene;
 }
 
 int main()
@@ -98,11 +97,7 @@ int main()
   ImGui_ImplOpenGL3_Init(glsl_version); // macOS = 150
 
   
-  bool show_demo_window = true;
-  bool show_another_window = false;
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-  char buf[250] = { 0 };
 
   // Main loop
   while (!glfwWindowShouldClose(window))
@@ -114,36 +109,83 @@ int main()
       ImGui_ImplGlfw_NewFrame();
       ImGui::NewFrame();
 
-      
-      // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-      if (show_demo_window)
-          ImGui::ShowDemoWindow(&show_demo_window);
-
-    
-      // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
       {
-          static std::string mapPath = "not loaded";
           static int seed = 42;
           static int dimensions[2] = { 50, 50 };
+          static std::string mapPath = "not loaded";
+          static bool valid_path = false;
+          static char output_name_buf[250] = { 0 };
+          static std::string log;
 
-          ImGui::Begin("Input");
+          ImGui::Begin("Input", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-          ImGui::Text("Welcome to our Minecraft clone !\nYou can choose the size of the map and its seed.\nEnjoy :)");               // Display some text (you can use a format strings too)
-          ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+          ImGui::Text("Welcome to our Minecraft clone !\n\
+\n\
+You can either:\n\
+1. Create a procedural generated map. You can choose the dimensions and the seed.\n\
+2. Load a map by providing a .shem file.\n\
+Enjoy :)\n\n");               // Display some text (you can use a format strings too)
+          ImGui::InputText("Output scene name", output_name_buf, 250);
+          ImGui::Text("\n");
 
-          ImGui::InputInt2("dimensions", dimensions);
-          ImGui::InputInt("seed", &seed);            // Edit 1 float using a slider from 0.0f to 1.0f
+          if (ImGui::CollapsingHeader("1. Procedural generated map"))
+          {
 
+            ImGui::Text("\n");
+            ImGui::InputInt2("dimensions (width x depth)", dimensions);
+            ImGui::InputInt("seed", &seed);
+
+            if (ImGui::Button("Create Procedural generated map"))
+            {
+              std::string output_name(output_name_buf, std::strlen(output_name_buf));
+
+              if (output_name.empty())
+              {
+                log = "Invalid output name, must not be empty.";                
+              }
+              else
+              {
+                render(dimensions[1], dimensions[0], seed, output_name, "", true, log);
+              }
+            }
+            ImGui::Text("\n");
+          }
+
+          if (ImGui::CollapsingHeader("2. Loaded map"))
+          {
+            ImGui::Text("\n");
+            ImGui::Text("Loaded map path: %s\n", mapPath.c_str());               // Display some text (you can use a format strings too)
           
-          ImGui::Text("Loaded map: %s", mapPath.c_str());               // Display some text (you can use a format strings too)
+            // open Dialog Simple
+         	if (ImGui::Button("Open File Dialog")) {
+        		IGFD::FileDialogConfig config;config.path = ".";
+        		ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose map to load (.schem)", ".schem", config);
+    		  }
 
-          // open Dialog Simple
-       	  if (ImGui::Button("Open File Dialog")) {
-      		IGFD::FileDialogConfig config;config.path = ".";
-      		ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose map to load (.schem)", ".schem", config);
-  		  }
+            if (ImGui::Button("Generate loaded map"))
+            {
+              std::string output_name(output_name_buf, std::strlen(output_name_buf));
 
-          ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+              if (!valid_path)
+              {
+                log = "Invalid file, cannot generate map.";
+              }
+              else if (output_name.empty())
+              {
+                log = "Invalid output name, must not be empty.";                
+              }
+              else
+              {
+                render(0, 0, 0, output_name, mapPath, false, log);
+                log = "Generated map !";
+              }
+            }
+            ImGui::Text("\n");
+          }
+
+
+          // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+          ImGui::Text("\n%s\n", log.c_str());
           ImGui::End();
 
           
@@ -152,7 +194,8 @@ int main()
             mapPath = ImGuiFileDialog::Instance()->GetFilePathName();
             std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
           }
-    
+
+  		  valid_path = true;
           // close
           ImGuiFileDialog::Instance()->Close();
         }
