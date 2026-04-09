@@ -22,12 +22,12 @@ void render(size_t width,
   log = "Rendering scene...";
   std::cout << "Rendering scene..." << '\n';
   size_t terrain_size = width * depth;
-  double scale = 4.0 / terrain_size;
+  double scale = 0.008;
   size_t camera_count = 1;
 
   isim::SceneOutput output;
   if (perlin)
-    output = isim::minecraft_terrain_scene(width, depth, scale, seed, 12,
+    output = isim::minecraft_terrain_scene(width, depth, scale, seed, 50,
                                            camera_count);
   else
     output = isim::load_schematic(input_path, true, 0);
