@@ -280,12 +280,13 @@ namespace isim
   SceneOutput minecraft_terrain_scene(int width,
                                       int depth,
                                       double scale,
+                                      size_t seed,
                                       int max_height,
                                       size_t camera_count)
   {
-    TerrainGenerator terrain(67, true);
+    TerrainGenerator terrain(seed, true);
 
-    static std::vector<const Object*> blocks =
+    std::vector<const Object*> blocks =
       terrain.generate(width, depth, scale, max_height);
 
     // iterate on all blocks to find the max and min y, to know where to place the camera and the ground plane
@@ -359,11 +360,11 @@ namespace isim
 
     static const std::vector<const isim::Light*> lights = {&main_light};
 
-    static Scene scene(blocks, lights, cameras, Color::sky_blue, Color::black);
+    Scene *scene = new Scene(blocks, lights, cameras, Color::sky_blue, Color::black);
 
-    scene.cameras = cameras;
+    scene->cameras = cameras;
 
-    return create_output("minecraft_terrain", &scene);
+    return create_output("minecraft_terrain", scene);
   }
 
   SceneOutput water_test()
@@ -466,9 +467,7 @@ namespace isim
 
     static const std::vector<const isim::Light*> lights = {&main_light};
 
-    static Scene* scene = nullptr;
-    delete scene;
-    scene = new Scene(objects, lights, {camera}, Color::sky_blue, Color::black);
+    Scene* scene = new Scene(objects, lights, {camera}, Color::sky_blue, Color::black);
 
     std::string real_filename =
       filename.substr(filename.find_last_of("/\\") + 1);
