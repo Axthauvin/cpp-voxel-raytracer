@@ -1,8 +1,13 @@
 #include <cstddef>
+#include <cstring>
 #include <iostream>
 #include <vector>
-#include <OpenGL/OpenGL.h>
-#include <OpenGL/gl3.h>
+
+#if defined(__APPLE__)
+#  include <OpenGL/gl3.h>
+#else
+#  include <GL/gl.h>
+#endif
 
 #include "scenes/scenes.hh"
 #include "utils/image.hh"
@@ -13,29 +18,28 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-GLuint load_texture(isim::Image &image)
+GLuint load_texture(isim::Image& image)
 {
-
   size_t w = image.width();
   size_t h = image.height();
 
-  uint8_t *data = static_cast<uint8_t *>(std::malloc(w * h * 4));
+  uint8_t* data = static_cast<uint8_t*>(std::malloc(w * h * 4));
 
   for (size_t i = 0; i < w * h; i++)
-  {
+    {
       isim::Color pixel = image.data()[i];
       data[4 * i] = pixel.r;
       data[4 * i + 1] = pixel.g;
       data[4 * i + 2] = pixel.b;
       data[4 * i + 3] = pixel.a;
-  }
+    }
 
   GLuint tex;
   glGenTextures(1, &tex);
   glBindTexture(GL_TEXTURE_2D, tex);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
-               GL_RGBA, GL_UNSIGNED_BYTE, data);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+               data);
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -46,12 +50,12 @@ GLuint load_texture(isim::Image &image)
 }
 
 isim::Image render(size_t width,
-            size_t depth,
-            size_t seed,
-            std::string output_name,
-            std::string input_path,
-            bool perlin,
-            std::string& log)
+                   size_t depth,
+                   size_t seed,
+                   std::string output_name,
+                   std::string input_path,
+                   bool perlin,
+                   std::string& log)
 {
   log = "Rendering scene...";
   std::cout << "Rendering scene..." << '\n';
@@ -166,31 +170,32 @@ int main()
         static GLuint image_tex;
 
         if (show_viewer)
-        {
-          ImGuiIO& io = ImGui::GetIO();
-
-          ImGui::SetNextWindowSize(ImVec2(img_w, img_h), ImGuiCond_FirstUseEver);
-
-          ImGui::Begin("Image Viewer", &show_viewer);
-
-          if (image_tex)
           {
-            // Zoom avec molette
-            if (ImGui::IsWindowHovered())
-                zoom += io.MouseWheel * 0.1f;
+            ImGuiIO& io = ImGui::GetIO();
 
-            zoom = std::max(0.1f, zoom);
+            ImGui::SetNextWindowSize(ImVec2(img_w, img_h),
+                                     ImGuiCond_FirstUseEver);
 
-            // Taille affichée (ratio conservé)
-            float display_w = img_w * zoom;
-            float display_h = img_h * zoom;
+            ImGui::Begin("Image Viewer", &show_viewer);
 
-            ImGui::Image((void*)(intptr_t)image_tex,
-                        ImVec2(display_w, display_h));
+            if (image_tex)
+              {
+                // Zoom avec molette
+                if (ImGui::IsWindowHovered())
+                  zoom += io.MouseWheel * 0.1f;
+
+                zoom = std::max(0.1f, zoom);
+
+                // Taille affichée (ratio conservé)
+                float display_w = img_w * zoom;
+                float display_h = img_h * zoom;
+
+                ImGui::Image((void*)(intptr_t)image_tex,
+                             ImVec2(display_w, display_h));
+              }
+
+            ImGui::End();
           }
-
-          ImGui::End();
-        }
 
         ImGui::Begin("Input", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
@@ -220,8 +225,9 @@ Enjoy :)\n\n"); // Display some text (you can use a format strings too)
                   }
                 else
                   {
-                    isim::Image image = render(dimensions[1], dimensions[0], seed, output_name, "",
-                           true, log);
+                    isim::Image image =
+                      render(dimensions[1], dimensions[0], seed, output_name,
+                             "", true, log);
 
                     log = "Generated map !";
                     img_w = image.width();
@@ -266,8 +272,9 @@ Enjoy :)\n\n"); // Display some text (you can use a format strings too)
                   }
                 else
                   {
-                    isim::Image image = render(0, 0, 0, output_name, mapPath, false, log);
-                    
+                    isim::Image image =
+                      render(0, 0, 0, output_name, mapPath, false, log);
+
                     log = "Generated map !";
                     img_w = image.width();
                     img_h = image.height();
