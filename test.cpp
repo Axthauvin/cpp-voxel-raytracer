@@ -1,6 +1,8 @@
 #include <cstddef>
 #include <iostream>
 #include <vector>
+#include <OpenGL/OpenGL.h>
+#include <OpenGL/gl3.h>
 
 #include "scenes/scenes.hh"
 #include "utils/image.hh"
@@ -11,7 +13,39 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-void render(size_t width,
+GLuint load_texture(isim::Image &image)
+{
+
+  size_t w = image.width();
+  size_t h = image.height();
+
+  uint8_t *data = static_cast<uint8_t *>(std::malloc(w * h * 4));
+
+  for (size_t i = 0; i < w * h; i++)
+  {
+      isim::Color pixel = image.data()[i];
+      data[4 * i] = pixel.r;
+      data[4 * i + 1] = pixel.g;
+      data[4 * i + 2] = pixel.b;
+      data[4 * i + 3] = pixel.a;
+  }
+
+  GLuint tex;
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
+               GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  std::free(data);
+
+  return tex;
+}
+
+isim::Image render(size_t width,
             size_t depth,
             size_t seed,
             std::string output_name,
@@ -21,7 +55,6 @@ void render(size_t width,
 {
   log = "Rendering scene...";
   std::cout << "Rendering scene..." << '\n';
-  size_t terrain_size = width * depth;
   double scale = 0.008;
   size_t camera_count = 1;
 
@@ -61,7 +94,10 @@ void render(size_t width,
       log = "Scene rendered and saved to " + filename;
       std::cout << "Scene rendered and saved to " << filename;
     }
+
   delete scene;
+
+  return image[0];
 }
 
 int main()
@@ -124,6 +160,38 @@ int main()
         static char output_name_buf[250] = {0};
         static std::string log;
 
+        static bool show_viewer = false;
+        static int img_w = 0, img_h = 0;
+        static float zoom = 1.0f;
+        static GLuint image_tex;
+
+        if (show_viewer)
+        {
+          ImGuiIO& io = ImGui::GetIO();
+
+          ImGui::SetNextWindowSize(ImVec2(img_w, img_h), ImGuiCond_FirstUseEver);
+
+          ImGui::Begin("Image Viewer", &show_viewer);
+
+          if (image_tex)
+          {
+            // Zoom avec molette
+            if (ImGui::IsWindowHovered())
+                zoom += io.MouseWheel * 0.1f;
+
+            zoom = std::max(0.1f, zoom);
+
+            // Taille affichée (ratio conservé)
+            float display_w = img_w * zoom;
+            float display_h = img_h * zoom;
+
+            ImGui::Image((void*)(intptr_t)image_tex,
+                        ImVec2(display_w, display_h));
+          }
+
+          ImGui::End();
+        }
+
         ImGui::Begin("Input", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
         ImGui::Text("Welcome to our Minecraft clone !\n\
@@ -152,8 +220,14 @@ Enjoy :)\n\n"); // Display some text (you can use a format strings too)
                   }
                 else
                   {
-                    render(dimensions[1], dimensions[0], seed, output_name, "",
+                    isim::Image image = render(dimensions[1], dimensions[0], seed, output_name, "",
                            true, log);
+
+                    log = "Generated map !";
+                    img_w = image.width();
+                    img_h = image.height();
+                    image_tex = load_texture(image);
+                    show_viewer = true;
                   }
               }
             ImGui::Text("\n");
@@ -192,8 +266,13 @@ Enjoy :)\n\n"); // Display some text (you can use a format strings too)
                   }
                 else
                   {
-                    render(0, 0, 0, output_name, mapPath, false, log);
+                    isim::Image image = render(0, 0, 0, output_name, mapPath, false, log);
+                    
                     log = "Generated map !";
+                    img_w = image.width();
+                    img_h = image.height();
+                    image_tex = load_texture(image);
+                    show_viewer = true;
                   }
               }
             ImGui::Text("\n");
