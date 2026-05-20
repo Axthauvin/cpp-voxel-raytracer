@@ -4,3 +4,6 @@ build/
 
 minecraft_terrain/
 test
+
+imgui.ini
+*.png

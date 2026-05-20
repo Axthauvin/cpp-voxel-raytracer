@@ -21,6 +21,7 @@ namespace isim
   SceneOutput minecraft_terrain_scene(int width,
                                       int depth,
                                       double scale,
+                                      size_t seed,
                                       int max_height = 12,
                                       size_t camera_count = 1);
   SceneOutput water_test();

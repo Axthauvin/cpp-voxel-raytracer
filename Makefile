@@ -1,4 +1,5 @@
-CXX := g++
+# CXX := g++
+UNAME_S := $(shell uname -s)
 
 SRC_DIRS := src lib
 BUILD_DIR := build
@@ -8,11 +9,23 @@ OBJ_FILES := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(patsubst %.cc,$(BUILD_DIR)/%.o,
 TEST_OBJ := $(BUILD_DIR)/test.o
 DEP_FILES := $(OBJ_FILES:.o=.d) $(TEST_OBJ:.o=.d)
 
-CPPFLAGS += -Isrc -Ilib -Ilib/utils
+CPPFLAGS += -Isrc -Ilib -Ilib/utils -Ilib/imgui -Ilib/backends
 CXXFLAGS += -Wall -Wextra -O3 -g -std=c++20 -march=native
 LDFLAGS += -fopenmp
 CXXFLAGS += -fopenmp
-LDLIBS += -lm -lz
+LDLIBS += -lm -lz -lglfw
+
+ifeq ($(UNAME_S),Darwin)
+CXXFLAGS += -DGL_SILENCE_DEPRECATION
+LDLIBS += -framework OpenGL \
+		  -framework Cocoa \
+		  -framework IOKit \
+		  -framework CoreVideo
+CPPFLAGS += -I/opt/homebrew/opt/glfw/include
+LDFLAGS  += -L/opt/homebrew/opt/glfw/lib
+else
+LDLIBS += -lGL -ldl -lpthread
+endif
 
 all: test
 
