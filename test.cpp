@@ -11,6 +11,7 @@
 
 #include "scenes/scenes.hh"
 #include "utils/image.hh"
+#include "utils/resolution.hh"
 
 #include "GLFW/glfw3.h"
 #include "ImGuiFileDialog.h"
@@ -55,7 +56,8 @@ isim::Image render(size_t width,
                    std::string output_name,
                    std::string input_path,
                    bool perlin,
-                   std::string& log)
+                   std::string& log,
+                   isim::Resolution res)
 {
   log = "Rendering scene...";
   std::cout << "Rendering scene..." << '\n';
@@ -80,8 +82,7 @@ isim::Image render(size_t width,
   log = "Scene " + output_name + " created, rendering...";
   std::cout << "Scene " << output_name << " created, rendering...";
 
-  std::vector<isim::Image> image =
-    scene->render_all_cameras(isim::Resolution::SmallHD(), true);
+  std::vector<isim::Image> image = scene->render_all_cameras(res, true);
 
   for (size_t i = 0; i < image.size(); i++)
     {
@@ -164,6 +165,94 @@ int main()
         static char output_name_buf[250] = {0};
         static std::string log;
 
+        // Resolution state and custom inputs
+        static int res_choice = 0;
+        static int custom_res[2] = {960, 540};
+        static isim::Resolution selected_res = isim::Resolution::SmallHD();
+
+        if (ImGui::BeginMainMenuBar())
+          {
+            if (ImGui::BeginMenu("Render"))
+              {
+                if (ImGui::BeginMenu("Resolution"))
+                  {
+                    if (ImGui::MenuItem("SmallHD", NULL, res_choice == 0))
+                      {
+                        res_choice = 0;
+                        selected_res = isim::Resolution::SmallHD();
+                      }
+                    if (ImGui::MenuItem("HD", NULL, res_choice == 1))
+                      {
+                        res_choice = 1;
+                        selected_res = isim::Resolution::HD();
+                      }
+                    if (ImGui::MenuItem("FullHD", NULL, res_choice == 2))
+                      {
+                        res_choice = 2;
+                        selected_res = isim::Resolution::FullHD();
+                      }
+                    if (ImGui::MenuItem("UHD", NULL, res_choice == 3))
+                      {
+                        res_choice = 3;
+                        selected_res = isim::Resolution::UHD();
+                      }
+                    if (ImGui::MenuItem("Cinema4K", NULL, res_choice == 4))
+                      {
+                        res_choice = 4;
+                        selected_res = isim::Resolution::Cinema4K();
+                      }
+                    if (ImGui::MenuItem("SmallSquare", NULL, res_choice == 5))
+                      {
+                        res_choice = 5;
+                        selected_res = isim::Resolution::SmallSquare();
+                      }
+                    if (ImGui::MenuItem("MediumSquare", NULL, res_choice == 6))
+                      {
+                        res_choice = 6;
+                        selected_res = isim::Resolution::MediumSquare();
+                      }
+                    if (ImGui::MenuItem("LargeSquare", NULL, res_choice == 7))
+                      {
+                        res_choice = 7;
+                        selected_res = isim::Resolution::LargeSquare();
+                      }
+                    if (ImGui::MenuItem("Custom...", NULL, res_choice == 8))
+                      {
+                        res_choice = 8;
+                        ImGui::OpenPopup("Custom Resolution");
+                      }
+
+                    ImGui::EndMenu();
+                  }
+                ImGui::EndMenu();
+              }
+            ImGui::EndMainMenuBar();
+          }
+
+        // Custom resolution popup
+        if (ImGui::BeginPopupModal("Custom Resolution", NULL,
+                                   ImGuiWindowFlags_AlwaysAutoResize))
+          {
+            ImGui::InputInt2("Width x Height", custom_res);
+            if (custom_res[0] < 1)
+              custom_res[0] = 1;
+            if (custom_res[1] < 1)
+              custom_res[1] = 1;
+
+            if (ImGui::Button("OK"))
+              {
+                selected_res = isim::Resolution::Custom((size_t)custom_res[0],
+                                                        (size_t)custom_res[1]);
+                ImGui::CloseCurrentPopup();
+              }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel"))
+              {
+                ImGui::CloseCurrentPopup();
+              }
+            ImGui::EndPopup();
+          }
+
         static bool show_viewer = false;
         static int img_w = 0, img_h = 0;
         static float zoom = 1.0f;
@@ -227,7 +316,7 @@ Enjoy :)\n\n"); // Display some text (you can use a format strings too)
                   {
                     isim::Image image =
                       render(dimensions[1], dimensions[0], seed, output_name,
-                             "", true, log);
+                             "", true, log, selected_res);
 
                     log = "Generated map !";
                     img_w = image.width();
@@ -272,8 +361,8 @@ Enjoy :)\n\n"); // Display some text (you can use a format strings too)
                   }
                 else
                   {
-                    isim::Image image =
-                      render(0, 0, 0, output_name, mapPath, false, log);
+                    isim::Image image = render(0, 0, 0, output_name, mapPath,
+                                               false, log, selected_res);
 
                     log = "Generated map !";
                     img_w = image.width();
